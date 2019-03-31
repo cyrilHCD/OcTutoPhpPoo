@@ -1,18 +1,22 @@
 <?php
 
 
-class Personnage
+abstract class Personnage
 {
-    private $_id;
-    private $_nom;
-    private $_degats;
+    protected $id;
+    protected $nom;
+    protected $degats;
+    protected $timeEndormi;
+    protected $atout;
+    protected $experience;
+    protected $type;
 
     const PERSO_TUE = 1;
     const PERSO_FRAPPE = 2;
     const PERSO_IDENTIQUE = 3;
     /**
      * Personnage constructor.
-     * @param $_id
+     * @param $id
      */
     public function __construct(array $donnees)
     {
@@ -48,6 +52,12 @@ class Personnage
         } else {
             return self::PERSO_FRAPPE;
         }
+    }
+
+    public function gagnerExperience()
+    {
+        // On ajoute 1 à notre attribut $experience.
+        $this->_experience++;
     }
 
     public function nomValide()
@@ -109,6 +119,54 @@ class Personnage
         if ($degats >= 0 && $degats <= 100) {
             $this->_degats = $degats;
         }
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @param mixed $type
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTimeEndormi() : int
+    {
+        return $this->timeEndormi;
+    }
+
+    /**
+     * @param mixed $timeEndormi
+     */
+    public function setTimeEndormi($timeEndormi)
+    {
+        $this->timeEndormi = $timeEndormi;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAtout() : int
+    {
+        return $this->atout;
+    }
+
+    /**
+     * @param mixed $atout
+     */
+    public function setAtout($atout)
+    {
+        $this->atout = $atout;
     }
 
 

@@ -1,11 +1,5 @@
 <?php
-// On enregistre notre autoload.
-function chargerClasse($classname) {
-    require "classes/" . $classname.'.php';
-}
-
-spl_autoload_register('chargerClasse');
-
+include("sql_connect.php");
 session_start();
 
 if (isset($_GET['deconnexion'])) {
@@ -14,17 +8,21 @@ if (isset($_GET['deconnexion'])) {
     exit();
 }
 
-if (isset($_SESSION['perso'])) { // Si la session perso existe, on restaure l'objet.
+// Si la session perso existe, on restaure l'objet.
+if (isset($_SESSION['perso'])) {
     $perso = $_SESSION['perso'];
 }
 
-$db = new PDO('mysql:host=localhost;dbname=test', 'root', '');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING); // On émet une alerte à chaque fois qu'une requête a échoué.
 
 $manager = new PersonnageManager($db);
-
-if (isset($_POST['creer']) && isset($_POST['nom'])) { // Si on a voulu créer un personnage.
-    $perso = new Personnage(['nom' => $_POST['nom']]); // On crée un nouveau personnage.
+// Si on a voulu créer un personnage
+if (isset($_POST['creer']) && isset($_POST['nom']) && isset($_POST["type"])) {
+    var_dump($_POST);
+    if ($_POST["type"] == "magicien") {
+        $perso =  new Magicien($_POST);
+    } elseif ($_POST["type"] == "guerrier") {
+        $perso =  new Guerrier($_POST);
+    }
 
     if (!$perso->nomValide()) {
         $message = 'Le nom choisi est invalide.';
@@ -101,13 +99,21 @@ if (isset($perso)) { // Si on utilise un personnage (nouveau ou pas).
     <fieldset>
         <legend>Mes informations</legend>
         <p>
-            Nom : <?= htmlspecialchars($perso->getNom()) ?><br />
-            Dégâts : <?= $perso->getDegats() ?>
+            Type : <?= $perso->getType() ?><br>
+            Nom : <?= htmlspecialchars($perso->getNom()) ?><br>
+            Dégâts : <?= $perso->getDegats() ?><br>
+        <?php if ($perso->getType() == "magicien") {?>
+            Magie : <?= $perso->getAtout() ?><br>
+        <?php } else {?>
+            Protection : <?= $perso->getAtout() ?><br>
+        <?php } ?>
+
+
         </p>
     </fieldset>
 
     <fieldset>
-        <legend>Qui frapper ?</legend>
+        <legend>Qui attaquer ?</legend>
         <p>
             <?php
             $persos = $manager->getList($perso->getNom());
@@ -115,8 +121,15 @@ if (isset($perso)) { // Si on utilise un personnage (nouveau ou pas).
             if (empty($persos)) {
                 echo 'Personne à frapper !';
             } else {
-                foreach ($persos as $unPerso)
-                    echo '<a href="?frapper=', $unPerso->getId(), '">', htmlspecialchars($unPerso->getNom()), '</a> (dégâts : ', $unPerso->getDegats(), ')<br />';
+                foreach ($persos as $unPerso) {
+                    $lancerSort = "";
+                    if ($unPerso->getType() == "magicien") {
+                        $lancerSort = " | <a href='?lancerSort='" . $unPerso->getId() . ">Lancer un sort</a>";
+                    }
+                    echo '<a href="?frapper=' . $unPerso->getId() . '">' .
+                        htmlspecialchars($unPerso->getNom()) . '</a> (dégâts : ' . $unPerso->getDegats() . ' | type :' .
+                        $unPerso->getType() . ')' . $lancerSort . '<br />';
+                }
             }
             ?>
         </p>
@@ -126,9 +139,17 @@ if (isset($perso)) { // Si on utilise un personnage (nouveau ou pas).
     ?>
     <form action="" method="post">
         <p>
-            Nom : <input type="text" name="nom" maxlength="50" />
+            <label for="nom">Nom : <input type="text" name="nom" id="nom" maxlength="50" />
+                <input type="submit" value="Utiliser ce personnage" name="utiliser" />
+            </label><br>
+
+            <label for="type">Type :
+                <select id="type" name="type">
+                    <option value="magicien">Magicien</option>
+                    <option value="guerrier">Guerrier</option>
+                </select>
+            </label>
             <input type="submit" value="Créer ce personnage" name="creer" />
-            <input type="submit" value="Utiliser ce personnage" name="utiliser" />
         </p>
     </form>
     <?php
