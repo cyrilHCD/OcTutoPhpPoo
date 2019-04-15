@@ -14,6 +14,9 @@ abstract class Personnage
     const PERSO_TUE = 1;
     const PERSO_FRAPPE = 2;
     const PERSO_IDENTIQUE = 3;
+    const PERSO_ENSORCELE = 4;// Constante renvoyée par la méthode `lancerUnSort` (voir classe Magicien) si on a bien ensorcelé un personnage.
+    const PAS_DE_MAGIE = 5; // Constante renvoyée par la méthode `lancerUnSort` (voir classe Magicien) si on veut jeter un sort alors que la magie du magicien est à 0.
+    const PERSO_ENDORMI = 6; // Constante renvoyée par la méthode `frapper` si le personnage qui veut frapper est endormi.
     /**
      * Personnage constructor.
      * @param $id
@@ -21,6 +24,7 @@ abstract class Personnage
     public function __construct(array $donnees)
     {
         $this->hydrate($donnees);
+        $this->type = strtolower(static::class);
     }
 
     public function hydrate(array $donnees)
@@ -39,7 +43,12 @@ abstract class Personnage
         if ($perso->getId() == $this->getId()) {
             return self::PERSO_IDENTIQUE;
         }
+        if ($this->estEndormi()) {
+            return self::PERSO_ENDORMI;
+        }
 
+        // On indique au personnage qu'il doit recevoir des dégâts.
+        // Puis on retourne la valeur renvoyée par la méthode : self::PERSONNAGE_TUE ou self::PERSONNAGE_FRAPPE.
         return $perso->recevoirDegats();
 
     }
@@ -52,6 +61,28 @@ abstract class Personnage
         } else {
             return self::PERSO_FRAPPE;
         }
+    }
+
+    public function estEndormi()
+    {
+        return $this->getTimeEndormi() > time();
+    }
+
+    public function reveil()
+    {
+        $secondes = $this->getTimeEndormi();
+        $secondes -= time();
+
+        $heures = floor($secondes / 3600);
+        $secondes -= $heures * 3600;
+        $minutes = floor($secondes / 60);
+        $secondes -= $minutes * 60;
+
+        $heures .= $heures <= 1 ? ' heure' : ' heures';
+        $minutes .= $minutes <= 1 ? ' minute' : ' minutes';
+        $secondes .= $secondes <= 1 ? ' seconde' : ' secondes';
+
+        return $heures . ', ' . $minutes . ' et ' . $secondes;
     }
 
     public function gagnerExperience()

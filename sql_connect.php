@@ -5,8 +5,6 @@ $db = new PDO('mysql:host=localhost;dbname=test', 'root', '');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
 
 // Chargement des classes
-function chargerClasse($classname) {
-    require "classes/" . $classname.'.php';
-}
-
-spl_autoload_register('chargerClasse');
+spl_autoload_register(function($class){
+    require "classes/" . $class.'.php';
+});

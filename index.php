@@ -15,23 +15,31 @@ if (isset($_SESSION['perso'])) {
 
 
 $manager = new PersonnageManager($db);
+
+if (isset($_SESSION["perso"])) {
+    $perso = $_SESSION["perso"];
+}
+
 // Si on a voulu créer un personnage
 if (isset($_POST['creer']) && isset($_POST['nom']) && isset($_POST["type"])) {
-    var_dump($_POST);
     if ($_POST["type"] == "magicien") {
         $perso =  new Magicien($_POST);
     } elseif ($_POST["type"] == "guerrier") {
         $perso =  new Guerrier($_POST);
+    } else {
+        $message = 'Le type du personnage est invalide.';
     }
 
-    if (!$perso->nomValide()) {
-        $message = 'Le nom choisi est invalide.';
-        unset($perso);
-    } elseif ($manager->exists($perso->getNom())) {
-        $message = 'Le nom du personnage est déjà pris.';
-        unset($perso);
-    } else {
-        $manager->add($perso);
+    if (isset($perso)) {
+        if (!$perso->nomValide()) {
+            $message = 'Le nom choisi est invalide.';
+            unset($perso);
+        } elseif ($manager->exists($perso->getNom())) {
+            $message = 'Le nom du personnage est déjà pris.';
+            unset($perso);
+        } else {
+            $manager->add($perso);
+        }
     }
 } elseif (isset($_POST['utiliser']) && isset($_POST['nom'])) { // Si on a voulu utiliser un personnage.
 
@@ -73,6 +81,50 @@ if (isset($_POST['creer']) && isset($_POST['nom']) && isset($_POST["type"])) {
                     $manager->delete($persoAFrapper);
 
                     break;
+                case Personnage::PERSO_ENDORMI:
+                    $message = 'Vous êtes endormi, vous ne pouvez pas frapper de personnage !';
+                    break;
+            }
+        }
+    }
+} elseif (isset($_GET['ensorceler'])) {
+    if (!isset($perso)) {
+        $message = 'Merci de créer un personnage ou de vous identifier.';
+    } else {
+        // Il faut bien vérifier que le personnage est un magicien.
+        if ($perso->getType() != 'magicien') {
+            $message = 'Seuls les magiciens peuvent ensorceler des personnages !';
+        } else {
+
+            if (!$manager->exists((int) $_GET['ensorceler'])) {
+                $message = 'Le personnage que vous voulez frapper n\'existe pas !';
+            } else {
+                $persoAEnsorceler = $manager->read((int) $_GET['ensorceler']);
+                var_dump($_GET['ensorceler']);
+                $retour = $perso->lancerUnSort($persoAEnsorceler);
+                var_dump($retour);
+                switch ($retour)
+                {
+                    case Personnage::PERSO_IDENTIQUE :
+                        $message = 'Mais... pourquoi voulez-vous vous ensorceler ???';
+                        break;
+
+                    case Personnage::PERSO_ENSORCELE :
+                        $message = 'Le personnage a bien été ensorcelé !';
+
+                        $manager->update($perso);
+                        $manager->update($persoAEnsorceler);
+
+                        break;
+
+                    case Personnage::PAS_DE_MAGIE :
+                        $message = 'Vous n\'avez pas de magie !';
+                        break;
+
+                    case Personnage::PERSO_ENDORMI :
+                        $message = 'Vous êtes endormi, vous ne pouvez pas lancer de sort !';
+                        break;
+                }
             }
         }
     }
@@ -116,19 +168,19 @@ if (isset($perso)) { // Si on utilise un personnage (nouveau ou pas).
         <legend>Qui attaquer ?</legend>
         <p>
             <?php
-            $persos = $manager->getList($perso->getNom());
+            $adversaires = $manager->getList($perso->getNom());
 
-            if (empty($persos)) {
+            if (empty($adversaires)) {
                 echo 'Personne à frapper !';
             } else {
-                foreach ($persos as $unPerso) {
+                foreach ($adversaires as $unAdversaire) {
                     $lancerSort = "";
-                    if ($unPerso->getType() == "magicien") {
-                        $lancerSort = " | <a href='?lancerSort='" . $unPerso->getId() . ">Lancer un sort</a>";
+                    if ($perso->getType() == "magicien") {
+                        $lancerSort = " | <a href='?ensorceler=".$unAdversaire->getId()."'>Lancer un sort</a>";
                     }
-                    echo '<a href="?frapper=' . $unPerso->getId() . '">' .
-                        htmlspecialchars($unPerso->getNom()) . '</a> (dégâts : ' . $unPerso->getDegats() . ' | type :' .
-                        $unPerso->getType() . ')' . $lancerSort . '<br />';
+                    echo '<a href="?frapper=' . $unAdversaire->getId() . '">' .
+                        htmlspecialchars($unAdversaire->getNom()) . '</a> (dégâts : ' . $unAdversaire->getDegats() . ' | type : ' .
+                        $unAdversaire->getType() . ')' . $lancerSort . '<br />';
                 }
             }
             ?>

@@ -39,25 +39,25 @@ class PersonnageManager
     public function read($info)
     {
         if (is_int($info)) {
-            $q = $this->_db->query('SELECT id, nom, degats, type FROM personnages_v2 WHERE id = '.$info);
-            $donnees = $q->fetch(PDO::FETCH_ASSOC);
-
-            if ($donnees["type"] == "magicien") {
-                return new Magicien($donnees);
-            } elseif ($donnees["type"] == "guerrier") {
-                return new Guerrier($donnees);
-            }
+            $q = $this->_db->query('SELECT id, nom, degats, timeEndormi, type, atout FROM personnages_v2 WHERE id = '.$info);
+            $perso = $q->fetch(PDO::FETCH_ASSOC);
 
         } else {
-            $q = $this->_db->prepare('SELECT id, nom, degats, type FROM personnages_v2 WHERE nom = :nom');
+            $q = $this->_db->prepare('SELECT id, nom, degats, timeEndormi, type, atout FROM personnages_v2 WHERE nom = :nom');
             $q->execute([':nom' => $info]);
-            $donnees = $q->fetch(PDO::FETCH_ASSOC);
+            $perso = $q->fetch(PDO::FETCH_ASSOC);
+        }
 
-            if ($donnees["type"] == "magicien") {
-                return new Magicien($donnees);
-            } elseif ($donnees["type"] == "guerrier") {
-                return new Guerrier($donnees);
-            }
+        switch ($perso["type"]) {
+            case "guerrier":
+                return new Guerrier($perso);
+                break;
+            case "magicien":
+                return new Magicien($perso);
+                break;
+            default:
+                return null;
+
         }
     }
 
@@ -65,11 +65,10 @@ class PersonnageManager
     {
         $persos = [];
 
-        $q = $this->_db->prepare('SELECT id, nom, degats, type FROM personnages_v2 WHERE nom <> :nom ORDER BY nom');
+        $q = $this->_db->prepare('SELECT id, nom, degats, timeEndormi, type, atout FROM personnages_v2 WHERE nom <> :nom ORDER BY nom');
         $q->execute([':nom' => $nom]);
 
-        while ($donnees = $q->fetch(PDO::FETCH_ASSOC))
-        {
+        while ($donnees = $q->fetch(PDO::FETCH_ASSOC)) {
             if ($donnees["type"] == "magicien") {
                 $persos[] = new Magicien($donnees);
             } elseif ($donnees["type"] == "guerrier") {
@@ -94,7 +93,7 @@ class PersonnageManager
 
     public function delete(Personnage $perso)
     {
-        $this->_db->exec('DELETE FROM personnages_v2 WHERE id = '.$perso->id());
+        $this->_db->exec('DELETE FROM personnages_v2 WHERE id = '.$perso->getId());
     }
 
     public function exists($info)
