@@ -14,7 +14,7 @@ if (isset($_SESSION['perso'])) {
 }
 
 
-$manager = new PersonnageManager($db);
+$manager = new PersonnageManager($connexion);
 
 if (isset($_SESSION["perso"])) {
     $perso = $_SESSION["perso"];
